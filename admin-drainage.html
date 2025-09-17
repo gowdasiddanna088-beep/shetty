@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Municipal Department - Complaints</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background:#f4f7f9; margin:0; }
+    header { background:#801bd8; color:#fff; padding:15px; display:flex; align-items:center; }
+    header img { height:40px; margin-right:10px; }
+    table { width:95%; border-collapse: collapse; margin:20px auto; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+    th,td { border:1px solid #ddd; padding:10px; text-align:left; }
+    th { background:#4436a1; color:white; }
+    img, video { max-width:120px; border-radius:6px; }
+  </style>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+</head>
+<body>
+  <header style="background:#6f42c1">
+    <img src="https://tse2.mm.bing.net/th/id/OIP.0R9Af4HCOKiqHT5Mx8ayDgHaHz?pid=Api&P=0&h=180" alt="Sanitation Logo">
+    <h2>Drainage Department - Complaints</h2>
+  </header>
+
+  <div id="complaintsTable">Loading complaints...</div>
+
+  <script>
+    const SUPABASE_URL = "https://mekvgtrmqenvecfhsvhm.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1la3ZndHJtcWVudmVjZmhzdmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NDQzMDAsImV4cCI6MjA3MzQyMDMwMH0.26lMBY44Oux4LrFI153wdMtEes9eUFZwE1GDOXdVZQM";
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadDeptComplaints() {
+      const { data, error } = await db
+        .from("complaints")
+        .select("*")
+        .eq("department", "Drainage"); // Make sure "Drainage" matches your table data
+
+      if (error) {
+        document.getElementById("complaintsTable").innerHTML = "Error loading data.";
+        console.error(error);
+        return;
+      }
+      renderTable(data);
+    }
+
+    function renderTable(rows) {
+      if (!rows.length) {
+        document.getElementById("complaintsTable").innerHTML = "No complaints found.";
+        return;
+      }
+      let html = `<table>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Photo</th>
+          <th>Video</th>
+          <th>Location</th>
+        </tr>`;
+      rows.forEach(r => {
+        html += `<tr>
+          <td>${r.id}</td>
+          <td>${r.name || ""}</td>
+          <td>${r.phone ? `<a href="tel:${r.phone}">${r.phone}</a>` : ""}</td>
+          <td>${r.description || ""}</td>
+          <td>${r.status || ""}</td>
+          <td>${r.photo ? `<img src="${r.photo}">` : "No Photo"}</td>
+          <td>${r.video ? `<video controls src="${r.video}"></video>` : "No Video"}</td>
+          <td>${r.location || ""}</td>
+        </tr>`;
+      });
+      html += "</table>";
+      document.getElementById("complaintsTable").innerHTML = html;
+    }
+
+    loadDeptComplaints();
+  </script>
+</body>
+</html>

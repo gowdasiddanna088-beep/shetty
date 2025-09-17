@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Complaint Management</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Top Bar -->
+  <header class="bg-blue-700 text-white shadow-md py-4 px-6 flex items-center">
+    <i class="fas fa-city text-2xl mr-3"></i>
+    <span class="text-xl font-bold tracking-wide">Smart Complaint Management</span>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex flex-col items-center justify-center flex-grow">
+
+    <!-- Heading -->
+    <h1 class="text-3xl font-extrabold text-blue-700 my-8 tracking-wide drop-shadow-lg">
+      Choose Department
+    </h1>
+
+    <!-- Department Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl px-6">
+      
+      <!-- Water -->
+      <div onclick="openAuthModal('Water')" 
+           class="cursor-pointer bg-gradient-to-r from-blue-400 to-blue-600 p-8 rounded-2xl shadow-xl text-center transform hover:scale-105 hover:shadow-2xl transition">
+        <i class="fas fa-droplet text-5xl text-white drop-shadow-md mb-3"></i>
+        <h2 class="text-2xl font-bold text-white">Water Department</h2>
+      </div>
+      
+      <!-- Electricity -->
+      <div onclick="openAuthModal('Electricity')" 
+           class="cursor-pointer bg-gradient-to-r from-yellow-400 to-orange-500 p-8 rounded-2xl shadow-xl text-center transform hover:scale-105 hover:shadow-2xl transition">
+        <i class="fas fa-plug-circle-bolt text-5xl text-white drop-shadow-md mb-3"></i>
+        <h2 class="text-2xl font-bold text-white">Electricity Department</h2>
+      </div>
+      
+      <!-- Roads -->
+      <div onclick="openAuthModal('Road')" 
+           class="cursor-pointer bg-gradient-to-r from-green-400 to-green-700 p-8 rounded-2xl shadow-xl text-center transform hover:scale-105 hover:shadow-2xl transition">
+        <i class="fas fa-road-circle-check text-5xl text-white drop-shadow-md mb-3"></i>
+        <h2 class="text-2xl font-bold text-white">Road Department</h2>
+      </div>
+      
+      <!-- Drainage -->
+      <div onclick="openAuthModal('Drainage')" 
+           class="cursor-pointer bg-gradient-to-r from-purple-500 to-indigo-700 p-8 rounded-2xl shadow-xl text-center transform hover:scale-105 hover:shadow-2xl transition">
+        <i class="fas fa-person-digging text-5xl text-white drop-shadow-md mb-3"></i>
+        <h2 class="text-2xl font-bold text-white">Drainage Department</h2>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="authModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg p-8 w-96 animate-fadeIn">
+      <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-center text-gray-700"></h2>
+      <input id="email" type="email" placeholder="Email" 
+             class="w-full mb-3 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <input id="password" type="password" placeholder="Password" 
+             class="w-full mb-3 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <div class="flex justify-center mb-4">
+        <button onclick="loginUser()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md">
+          Login
+        </button>
+      </div>
+      <p id="authMessage" class="text-center text-red-500 text-sm"></p>
+      <button onclick="closeAuthModal()" class="mt-4 text-sm text-gray-500 underline w-full">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // Supabase initialization
+    const SUPABASE_URL = "https://slssmyaukmzvzysjxjjc.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc3NteWF1a216dnp5c2p4ampjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5MTY3NDksImV4cCI6MjA3MjQ5Mjc0OX0.bzXDMjBMriqTaGfXc4muyldJ1qDi4Q7KJyHntCbpkzo";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let selectedDepartment = "";
+
+    function openAuthModal(dept) {
+      selectedDepartment = dept;
+      document.getElementById("modalTitle").innerText = dept + " - Login";
+      document.getElementById("authModal").classList.remove("hidden");
+    }
+
+    function closeAuthModal() {
+      document.getElementById("authModal").classList.add("hidden");
+      document.getElementById("authMessage").innerText = "";
+    }
+
+    async function loginUser() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        document.getElementById("authMessage").innerText = "Invalid login credentials!";
+        return;
+      }
+
+      let { data: userDept, error: deptError } = await supabaseClient
+        .from("users_info")
+        .select("department")
+        .eq("email", email)
+        .single();
+
+      if (deptError || !userDept) {
+        document.getElementById("authMessage").innerText = "No department assigned!";
+        return;
+      }
+
+      const dept = userDept.department ? userDept.department.toLowerCase().trim() : "";
+
+      // Redirect based on normalized department
+      if (dept.includes("water")) window.location.href = "admin-water.html";
+      else if (dept.includes("electricity")) window.location.href = "admin-electricity.html";
+      else if (dept.includes("road")) window.location.href = "admin-roads.html";
+      else if (dept.includes("drainage") || dept.includes("sanitation") || dept.includes("municipal"))
+        window.location.href = "admin-drainage.html";
+      else {
+        document.getElementById("authMessage").innerText = "Department not recognized!";
+      }
+    }
+  </script>
+
+  <style>
+    /* Smooth fade-in animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
+  </style>
+</body>
+</html>
